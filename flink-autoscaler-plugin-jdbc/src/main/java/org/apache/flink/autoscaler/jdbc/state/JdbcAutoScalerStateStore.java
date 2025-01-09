@@ -337,4 +337,9 @@ public class JdbcAutoScalerStateStore<KEY, Context extends JobAutoScalerContext<
             throws JacksonException {
         return YAML_MAPPER.readValue(delayedScaleDown, new TypeReference<>() {});
     }
+
+    @Override
+    public void close() throws Exception {
+        jdbcStateStore.close();
+    }
 }

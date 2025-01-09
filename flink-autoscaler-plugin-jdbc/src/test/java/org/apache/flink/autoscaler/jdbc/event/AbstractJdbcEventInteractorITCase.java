@@ -46,63 +46,63 @@ abstract class AbstractJdbcEventInteractorITCase implements DatabaseTest {
 
         // The datetime precision is seconds in MySQL by default.
         var createTime = Instant.now().truncatedTo(ChronoUnit.SECONDS);
-        try (var conn = getConnection()) {
-            var jdbcEventInteractor = new JdbcEventInteractor(conn);
-            jdbcEventInteractor.setClock(Clock.fixed(createTime, ZoneId.systemDefault()));
+        var dataSource = getDataSource();
+        var jdbcEventInteractor = new JdbcEventInteractor(dataSource);
+        jdbcEventInteractor.setClock(Clock.fixed(createTime, ZoneId.systemDefault()));
 
-            jdbcEventInteractor.createEvent(
-                    jobKey, reason, AutoScalerEventHandler.Type.Normal, message, eventKey);
-            var firstEventOptional = jdbcEventInteractor.queryLatestEvent(jobKey, reason, eventKey);
-            assertThat(firstEventOptional).isPresent();
-            assertEvent(
-                    firstEventOptional.get(),
-                    createTime,
-                    createTime,
-                    jobKey,
-                    reason,
-                    message,
-                    1,
-                    eventKey);
+        jdbcEventInteractor.createEvent(
+                jobKey, reason, AutoScalerEventHandler.Type.Normal, message, eventKey);
+        var firstEventOptional = jdbcEventInteractor.queryLatestEvent(jobKey, reason, eventKey);
+        assertThat(firstEventOptional).isPresent();
+        assertEvent(
+                firstEventOptional.get(),
+                createTime,
+                createTime,
+                jobKey,
+                reason,
+                message,
+                1,
+                eventKey);
 
-            // The create time is changed for the second event.
-            var secondCreateTime = createTime.plusSeconds(5);
-            jdbcEventInteractor.setClock(Clock.fixed(secondCreateTime, ZoneId.systemDefault()));
-            jdbcEventInteractor.createEvent(
-                    jobKey, reason, AutoScalerEventHandler.Type.Normal, message + 2, eventKey);
-            // The latest event should be the second event.
-            var secondEventOptional =
-                    jdbcEventInteractor.queryLatestEvent(jobKey, reason, eventKey);
-            assertThat(secondEventOptional).isPresent();
-            var secondEvent = secondEventOptional.get();
-            assertEvent(
-                    secondEvent,
-                    secondCreateTime,
-                    secondCreateTime,
-                    jobKey,
-                    reason,
-                    message + 2,
-                    1,
-                    eventKey);
+        // The create time is changed for the second event.
+        var secondCreateTime = createTime.plusSeconds(5);
+        jdbcEventInteractor.setClock(Clock.fixed(secondCreateTime, ZoneId.systemDefault()));
+        jdbcEventInteractor.createEvent(
+                jobKey, reason, AutoScalerEventHandler.Type.Normal, message + 2, eventKey);
+        // The latest event should be the second event.
+        var secondEventOptional = jdbcEventInteractor.queryLatestEvent(jobKey, reason, eventKey);
+        assertThat(secondEventOptional).isPresent();
+        var secondEvent = secondEventOptional.get();
+        assertEvent(
+                secondEvent,
+                secondCreateTime,
+                secondCreateTime,
+                jobKey,
+                reason,
+                message + 2,
+                1,
+                eventKey);
 
-            // Update event
-            var updateTime = secondCreateTime.plusSeconds(3);
-            jdbcEventInteractor.setClock(Clock.fixed(updateTime, ZoneId.systemDefault()));
-            jdbcEventInteractor.updateEvent(
-                    secondEvent.getId(), secondEvent.getMessage() + 3, secondEvent.getCount() + 1);
+        // Update event
+        var updateTime = secondCreateTime.plusSeconds(3);
+        jdbcEventInteractor.setClock(Clock.fixed(updateTime, ZoneId.systemDefault()));
+        jdbcEventInteractor.updateEvent(
+                secondEvent.getId(), secondEvent.getMessage() + 3, secondEvent.getCount() + 1);
 
-            var updatedEventOptional =
-                    jdbcEventInteractor.queryLatestEvent(jobKey, reason, eventKey);
-            assertThat(updatedEventOptional).isPresent();
-            var updatedEvent = updatedEventOptional.get();
-            assertEvent(
-                    updatedEvent,
-                    secondCreateTime,
-                    updateTime,
-                    jobKey,
-                    reason,
-                    secondEvent.getMessage() + 3,
-                    2,
-                    eventKey);
+        var updatedEventOptional = jdbcEventInteractor.queryLatestEvent(jobKey, reason, eventKey);
+        assertThat(updatedEventOptional).isPresent();
+        var updatedEvent = updatedEventOptional.get();
+        assertEvent(
+                updatedEvent,
+                secondCreateTime,
+                updateTime,
+                jobKey,
+                reason,
+                secondEvent.getMessage() + 3,
+                2,
+                eventKey);
+        if (dataSource instanceof AutoCloseable) {
+            ((AutoCloseable) dataSource).close();
         }
     }
 

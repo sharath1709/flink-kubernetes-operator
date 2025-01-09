@@ -19,12 +19,11 @@ package org.apache.flink.autoscaler.jdbc.state;
 
 import org.apache.flink.autoscaler.jdbc.testutils.databases.derby.DerbyTestBase;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.sql.Connection;
-import java.sql.SQLException;
+import javax.sql.DataSource;
+
 import java.util.Optional;
 
 import static org.apache.flink.autoscaler.jdbc.state.StateType.COLLECTED_METRICS;
@@ -36,23 +35,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 class JobStateViewTest implements DerbyTestBase {
 
     private static final String DEFAULT_JOB_KEY = "jobKey";
-    private Connection conn;
+    private DataSource dataSource;
     private CountableJdbcStateInteractor jdbcStateInteractor;
     private JobStateView jobStateView;
 
     @BeforeEach
     void beforeEach() throws Exception {
-        this.conn = getConnection();
-        this.jdbcStateInteractor = new CountableJdbcStateInteractor(conn);
+        this.dataSource = getDataSource();
+        this.jdbcStateInteractor = new CountableJdbcStateInteractor(dataSource);
         this.jobStateView = new JobStateView(jdbcStateInteractor, DEFAULT_JOB_KEY);
         jdbcStateInteractor.assertCountableJdbcInteractor(1, 0, 0, 0);
-    }
-
-    @AfterEach
-    void afterEach() throws SQLException {
-        if (conn != null) {
-            conn.close();
-        }
     }
 
     @Test
@@ -195,7 +187,7 @@ class JobStateViewTest implements DerbyTestBase {
     }
 
     private Optional<String> getValueFromDatabase(StateType stateType) throws Exception {
-        var jdbcInteractor = new JdbcStateInteractor(conn);
+        var jdbcInteractor = new JdbcStateInteractor(dataSource);
         return Optional.ofNullable(jdbcInteractor.queryData(DEFAULT_JOB_KEY).get(stateType));
     }
 }

@@ -42,32 +42,35 @@ abstract class AbstractJdbcStateInteractorITCase implements DatabaseTest {
         var value1 = "value1";
         var value2 = "value2";
         var value3 = "value3";
-        try (var conn = getConnection()) {
-            var jdbcStateInteractor = new JdbcStateInteractor(conn);
-            assertThat(jdbcStateInteractor.queryData(jobKey)).isEmpty();
+        var dataSource = getDataSource();
+        var jdbcStateInteractor = new JdbcStateInteractor(dataSource);
+        assertThat(jdbcStateInteractor.queryData(jobKey)).isEmpty();
 
-            // Test for creating data.
-            jdbcStateInteractor.createData(
-                    jobKey,
-                    List.of(COLLECTED_METRICS, SCALING_HISTORY),
-                    Map.of(COLLECTED_METRICS, value1, SCALING_HISTORY, value2));
-            assertThat(jdbcStateInteractor.queryData(jobKey))
-                    .isEqualTo(Map.of(COLLECTED_METRICS, value1, SCALING_HISTORY, value2));
+        // Test for creating data.
+        jdbcStateInteractor.createData(
+                jobKey,
+                List.of(COLLECTED_METRICS, SCALING_HISTORY),
+                Map.of(COLLECTED_METRICS, value1, SCALING_HISTORY, value2));
+        assertThat(jdbcStateInteractor.queryData(jobKey))
+                .isEqualTo(Map.of(COLLECTED_METRICS, value1, SCALING_HISTORY, value2));
 
-            // Test for updating data.
-            jdbcStateInteractor.updateData(
-                    jobKey,
-                    List.of(COLLECTED_METRICS),
-                    Map.of(COLLECTED_METRICS, value3, SCALING_HISTORY, value2));
-            assertThat(jdbcStateInteractor.queryData(jobKey))
-                    .isEqualTo(Map.of(COLLECTED_METRICS, value3, SCALING_HISTORY, value2));
+        // Test for updating data.
+        jdbcStateInteractor.updateData(
+                jobKey,
+                List.of(COLLECTED_METRICS),
+                Map.of(COLLECTED_METRICS, value3, SCALING_HISTORY, value2));
+        assertThat(jdbcStateInteractor.queryData(jobKey))
+                .isEqualTo(Map.of(COLLECTED_METRICS, value3, SCALING_HISTORY, value2));
 
-            // Test for deleting data.
-            jdbcStateInteractor.deleteData(jobKey, List.of(COLLECTED_METRICS));
-            assertThat(jdbcStateInteractor.queryData(jobKey))
-                    .isEqualTo(Map.of(SCALING_HISTORY, value2));
-            jdbcStateInteractor.deleteData(jobKey, List.of(SCALING_HISTORY));
-            assertThat(jdbcStateInteractor.queryData(jobKey)).isEmpty();
+        // Test for deleting data.
+        jdbcStateInteractor.deleteData(jobKey, List.of(COLLECTED_METRICS));
+        assertThat(jdbcStateInteractor.queryData(jobKey))
+                .isEqualTo(Map.of(SCALING_HISTORY, value2));
+        jdbcStateInteractor.deleteData(jobKey, List.of(SCALING_HISTORY));
+        assertThat(jdbcStateInteractor.queryData(jobKey)).isEmpty();
+
+        if (dataSource instanceof AutoCloseable) {
+            ((AutoCloseable) dataSource).close();
         }
     }
 }

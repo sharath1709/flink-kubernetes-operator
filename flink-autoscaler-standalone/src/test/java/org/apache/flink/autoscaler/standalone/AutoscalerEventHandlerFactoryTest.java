@@ -19,7 +19,6 @@ package org.apache.flink.autoscaler.standalone;
 
 import org.apache.flink.autoscaler.event.LoggingEventHandler;
 import org.apache.flink.autoscaler.jdbc.event.JdbcAutoScalerEventHandler;
-import org.apache.flink.autoscaler.standalone.utils.HikariJDBCUtil;
 import org.apache.flink.configuration.Configuration;
 
 import org.junit.jupiter.api.Test;
@@ -68,14 +67,12 @@ class AutoscalerEventHandlerFactoryTest {
         final var conf = new Configuration();
         conf.set(EVENT_HANDLER_TYPE, JDBC);
         conf.set(JDBC_URL, String.format("%s;create=true", jdbcUrl));
-        HikariJDBCUtil.getConnection(conf).close();
 
         var eventHandler = AutoscalerEventHandlerFactory.create(conf);
         assertThat(eventHandler).isInstanceOf(JdbcAutoScalerEventHandler.class);
 
         try {
             conf.set(JDBC_URL, String.format("%s;shutdown=true", jdbcUrl));
-            HikariJDBCUtil.getConnection(conf).close();
         } catch (RuntimeException ignored) {
             // database shutdown ignored exception
         }

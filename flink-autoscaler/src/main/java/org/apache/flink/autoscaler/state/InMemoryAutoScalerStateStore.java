@@ -183,4 +183,7 @@ public class InMemoryAutoScalerStateStore<KEY, Context extends JobAutoScalerCont
         collectedMetricsStore.remove(jobKey);
         parallelismOverridesStore.remove(jobKey);
     }
+
+    @Override
+    public void close() throws Exception {}
 }
